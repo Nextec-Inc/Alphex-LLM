@@ -33,10 +33,12 @@ class Alphex(nn.Module):
             return output_ids
 
     def chat(self, prompt, max_length=20, temperature=1.0):
-        input_ids = torch.tensor(prompt, dtype=torch.long).unsqueeze(0)
-        output_ids = self.generate(input_ids, max_length, temperature)
-        return output_ids.squeeze(0).tolist()
-
+        self.eval()
+        with torch.no_grad():
+            prompt_ids = torch.tensor(prompt, dtype=torch.long).unsqueeze(0)
+            generated_ids = self.generate(prompt_ids, max_length=max_length, temperature=temperature)
+            generated_text = ' '.join([tokenizer.decode(token_id.item()) for token_id in generated_ids[0]])
+            return generated_text
 
 class ContextualEncoder(nn.Module):
     def __init__(self, hidden_size, num_layers, num_heads, dropout_rate=0.1):
