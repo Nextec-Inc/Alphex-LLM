@@ -2,12 +2,15 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
+import os
 import model 
 from tqdm import tqdm
 from torchtext.datasets import WikiText2
 from torchtext.data.utils import get_tokenizer
 from torchtext.vocab import build_vocab_from_iterator
-
+import transformers
+import datasets
+import urllib
 # Set device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -21,8 +24,27 @@ max_sequence_len = 128  # Maximum sequence length for input and output
 # Tokenizer
 tokenizer = get_tokenizer("basic_english")
 
-# Load WikiText2 dataset
-train_dataset, valid_dataset, test_dataset = WikiText2()
+url = "https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt"
+filename = "tinyshakespeare.txt"
+if not os.path.exists(filename):
+    urllib.request.urlretrieve(url, filename)
+
+# Read the dataset
+with open(filename, 'r') as f:
+    text = f.read()
+
+# Split the dataset into train, validation, and test sets
+train_frac = 0.8
+val_frac = 0.1
+test_frac = 0.1
+
+num_chars = len(text)
+train_cutoff = int(num_chars * train_frac)
+val_cutoff = int(num_chars * (train_frac + val_frac))
+
+train_dataset = text[:train_cutoff]
+valid_dataset = text[train_cutoff:val_cutoff]
+test_dataset = text[val_cutoff:]
 
 # Build vocabulary from the training set
 vocab = build_vocab_from_iterator(map(tokenizer, train_dataset))
@@ -64,8 +86,8 @@ def train(model, iterator, optimizer, criterion):
         optimizer.zero_grad()
         batch = batch.to(device)
 
-        # Forward pass
-        logits = model(batch[:,:-1])
+        # Forward pass 
+        logits = model(batch[:,:-1].contiguous())
         targets = batch[:, 1:].contiguous().view(-1)
         loss = criterion(logits.view(-1, vocab_size), targets)
 
