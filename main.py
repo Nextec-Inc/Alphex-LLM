@@ -42,9 +42,7 @@ num_chars = len(text)
 train_cutoff = int(num_chars * train_frac)
 val_cutoff = int(num_chars * (train_frac + val_frac))
 
-train_dataset = text[:train_cutoff]
-valid_dataset = text[train_cutoff:val_cutoff]
-test_dataset = text[val_cutoff:]
+train_dataset , valid_dataset ,  test_dataset = WikiText2()
 
 # Build vocabulary from the training set
 vocab = build_vocab_from_iterator(map(tokenizer, train_dataset))
