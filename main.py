@@ -50,14 +50,33 @@ test_dataset = text[val_cutoff:]
 vocab = build_vocab_from_iterator(map(tokenizer, train_dataset))
 
 # Set up data loaders
-def data_process(raw_text_iter):
-    data = [torch.tensor([vocab[token] for token in tokenizer(item)],
-                         dtype=torch.long) for item in raw_text_iter]
-    return torch.cat(tuple(filter(lambda t: t.numel() > 0, data)))
+def data_process(raw_text_iter, seq_length):
 
-train_data = data_process(train_dataset)
-val_data = data_process(valid_dataset)
-test_data = data_process(test_dataset)
+    data = [torch.tensor([vocab[token] for token in tokenizer(item)],
+
+                         dtype=torch.long) for item in raw_text_iter]
+
+    data = torch.cat(tuple(filter(lambda t: t.numel() > 0, data)))
+
+    
+
+    # Split data into sequences of the desired length
+
+    num_sequences = len(data) // seq_length
+
+    data = data[:num_sequences * seq_length]
+
+    data = data.view(-1, seq_length)
+
+    
+
+    return data
+
+seq_length = 64  # Desired sequence length
+
+train_data = data_process(train_dataset , seq_length)
+val_data = data_process(valid_dataset , seq_length)
+test_data = data_process(test_dataset, seq_length)
 
 batch_size = 32
 bptt_len = 32
