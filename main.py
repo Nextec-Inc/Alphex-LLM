@@ -152,4 +152,4 @@ if __name__ == '__main__':
     # Testing
     test_loss = evaluate(model, test_loader, criterion)
     print(f"Test Loss: {test_loss:.4f}")
-    torch.save('Alphex-BiDEN-Pretrained.pt')
+    torch.save(model ,'Alphex-BiDEN-Pretrained.pt')
