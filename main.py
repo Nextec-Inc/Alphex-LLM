@@ -8,7 +8,7 @@ from tqdm import tqdm
 from torchtext.datasets import WikiText2
 from torchtext.data.utils import get_tokenizer
 from torchtext.vocab import build_vocab_from_iterator
-import transformers
+from transformers import BertTokenizer
 import datasets
 import urllib
 # Set device
@@ -22,7 +22,7 @@ heads = 8
 max_sequence_len = 128  # Maximum sequence length for input and output
 
 # Tokenizer
-tokenizer = get_tokenizer("basic_english")
+tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
 url = "https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt"
 filename = "tinyshakespeare.txt"
@@ -49,7 +49,19 @@ vocab = build_vocab_from_iterator(map(tokenizer, train_dataset))
 
 # Set up data loaders
 def data_process(raw_text_iter, seq_length):
-
+    encoded_data = []
+    for item in raw_text_iter:
+        encoded_inputs = tokenizer.encode_plus(
+            item,
+            add_special_tokens=True,
+            padding='max_length',
+            truncation=True,
+            max_length=seq_length,
+            return_tensors='pt'
+        )
+        encoded_data.append(encoded_inputs.input_ids)
+    encoded_data = torch.cat(encoded_data, dim=0)
+    return encoded_data
     data = [torch.tensor([vocab[token] for token in tokenizer(item)],
 
                          dtype=torch.long) for item in raw_text_iter]
@@ -58,32 +70,28 @@ def data_process(raw_text_iter, seq_length):
 
     
 
-    # Split data into sequences of the desired length
 
-    num_sequences = len(data) // seq_length
 
-    data = data[:num_sequences * seq_length]
 
-    data = data.view(-1, seq_length)
 
-    
 
-    return data
+
 def decode(tensor_sequences, vocab=vocab):
 
-    # Flatten the tensor sequences
+   tokens = tokenizer.convert_ids_to_tokens(token_ids)
 
-    flat_data = tensor_sequences.flatten()
+    text = tokenizer.convert_tokens_to_string(tokens)
 
-    # Convert tensor values back into tokens
+    return text
 
-    tokens = [vocab[idx.item()] for idx in flat_data]
 
-    # Join tokens to form text
 
-    decoded_text = ' '.join(tokens)
 
-    return decoded_text
+ 
+
+
+
+
 
 seq_length = 64  # Desired sequence length
 
