@@ -48,50 +48,23 @@ train_dataset , valid_dataset ,  test_dataset = WikiText2()
 vocab = build_vocab_from_iterator(map(tokenizer, train_dataset))
 
 # Set up data loaders
-def data_process(raw_text_iter, seq_length):
-    encoded_data = []
-    for item in raw_text_iter:
-        encoded_inputs = tokenizer.encode_plus(
-            item,
-            add_special_tokens=True,
-            padding='max_length',
-            truncation=True,
-            max_length=seq_length,
-            return_tensors='pt'
-        )
-        encoded_data.append(encoded_inputs.input_ids)
-    encoded_data = torch.cat(encoded_data, dim=0)
-    return encoded_data
-    data = [torch.tensor([vocab[token] for token in tokenizer(item)],
-
-                         dtype=torch.long) for item in raw_text_iter]
-
-    data = torch.cat(tuple(filter(lambda t: t.numel() > 0, data)))
-
+def data_process(text, seq_length):
+    tokens = tokenizer.encode(text, add_special_tokens=True)
+    # Truncate or pad the sequence to a fixed length
+    tokens = tokens[:seq_length] if len(tokens) > seq_length else tokens + [0] * (seq_length - len(tokens))
+    # Convert tokens to a PyTorch tensor
+    tensor = torch.tensor(tokens)
+    return tensor
     
 
+def decode(tensor):
 
-
-
-
-
-
-def decode(tensor_sequences, vocab=vocab):
-
-   tokens = tokenizer.convert_ids_to_tokens(token_ids)
-
-   text = tokenizer.convert_tokens_to_string(tokens)
-
-   return text
-
-
-
-
- 
-
-
-
-
+    tensor = tensor.tolist()
+    # Remove padding (0) and convert integers to words
+    words = [tokenizer.decode([index]) for index in tensor if index != 0]
+    # Join the words to form the decoded string
+    decoded_text = ' '.join(words)
+    return decoded_text
 
 seq_length = 64  # Desired sequence length
 
