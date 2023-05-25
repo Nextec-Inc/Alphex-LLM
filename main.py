@@ -155,7 +155,7 @@ def evaluate(model, iterator, criterion):
 
 if __name__ == '__main__':
 # Training
-    num_epochs = 10
+    num_epochs = 3
 
     for epoch in range(num_epochs):
       train_loss = train(model, train_loader, optimizer, criterion)
