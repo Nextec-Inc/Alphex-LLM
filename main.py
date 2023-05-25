@@ -24,23 +24,29 @@ tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
 
 # Set up data loaders
-def data_process(text, seq_length):
+def data_process(text, seq_length, stride):
     tokens = tokenizer.encode(text, add_special_tokens=True)
-    # Truncate or pad the sequence to a fixed length
-    tokens = tokens[:seq_length] if len(tokens) > seq_length else tokens + [0] * (seq_length - len(tokens))
-    # Convert tokens to a PyTorch tensor
-    tensor = torch.tensor(tokens)
+    chunks = []
+
+    for start in range(0, len(tokens), stride):
+        end = min(start + seq_length, len(tokens))
+        chunk = tokens[start:end]
+        chunk = chunk + [0] * (seq_length - len(chunk))  # Pad the chunk to match the desired sequence length
+        chunks.append(chunk)
+
+    # Convert chunks to a PyTorch tensor
+    tensor = torch.tensor(chunks)
     return tensor
-    
-
-
 def decode(tensor):
-
     tensor = tensor.tolist()
-    # Remove padding (0) and convert integers to words
-    words = [tokenizer.decode([index]) for index in tensor if index != 0]
-    # Join the words to form the decoded string
-    decoded_text = ' '.join(words)
+    decoded_text = []
+
+    for chunk in tensor:
+        # Remove padding (0) and convert integers to words
+        words = [tokenizer.decode([index]) for index in chunk if index != 0]
+        # Join the words to form the decoded string
+        decoded_text.append(' '.join(words))
+
     return decoded_text
 
 seq_length = 64  # Desired sequence length
@@ -60,9 +66,9 @@ train_dataset  = download_file(train_url)
 valid_dataset = download_file(valid_url)
 test_dataset = download_file(test_url)
 #Encode data 
-train_data = data_process(train_dataset , seq_length)
-val_data = data_process(valid_dataset , seq_length)
-test_data = data_process(test_dataset, seq_length)
+train_data = data_process(train_dataset , seq_length, 128)
+val_data = data_process(valid_dataset , seq_length, 128)
+test_data = data_process(test_dataset, seq_length, 128)
 
 batch_size = 32
 bptt_len = 32
@@ -73,15 +79,16 @@ test_loader = DataLoader(test_data, batch_size=batch_size)
 
 
 # Initialize the model
-model = model.Alphex(vocab_size, hidden_size, layers, heads, max_sequence_len).to(device)
+mod = model.Alphex(vocab_size, hidden_size, layers, heads, max_sequence_len).to(device)
 
 # Loss function and optimizer
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=3e-5)
+weight_decay = 1e-5
+optimizer = optim.AdamW(mod.parameters(), lr=3e-5, weight_decay=weight_decay)
 
 # Training loop
-def train(model, iterator, optimizer, criterion):
-    model.train()
+def train(mod, iterator, optimizer, criterion):
+    mod.train()
     total_loss = 0.0
     total_tokens = 0
 
@@ -90,13 +97,20 @@ def train(model, iterator, optimizer, criterion):
         batch = batch.to(device)
 
         # Forward pass 
-        logits = model(batch[:,:-1].contiguous())
+        logits = mod(batch[:,:-1].contiguous())
         targets = batch[:, 1:].contiguous().view(-1)
         loss = criterion(logits.view(-1, vocab_size), targets)
 
+        # L2 regularization
+        l2_loss = 0.0
+        for param in mod.parameters():
+            l2_loss += torch.norm(param, p=2)
+
+        loss += weight_decay * l2_loss
+
         # Backward pass
         loss.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+        torch.nn.utils.clip_grad_norm_(mod.parameters(), 1.0)
         optimizer.step()
 
         total_loss += loss.item() * targets.size(0)
@@ -105,8 +119,8 @@ def train(model, iterator, optimizer, criterion):
     return total_loss / total_tokens
 
 # Evaluation loop
-def evaluate(model, iterator, criterion):
-    model.eval()
+def evaluate(mod, iterator, criterion):
+    mod.eval()
     total_loss = 0.0
     total_tokens = 0
 
@@ -115,7 +129,7 @@ def evaluate(model, iterator, criterion):
             batch = batch.to(device)
 
             # Forward pass
-            logits = model(batch[:, :-1])
+            logits = mod(batch[:, :-1])
             targets = batch[:, 1:].contiguous().view(-1)
             loss = criterion(logits.view(-1, vocab_size), targets)
 
@@ -127,17 +141,17 @@ def evaluate(model, iterator, criterion):
 
 if __name__ == '__main__':
 # Training
-    num_epochs = 3
-
+    num_epochs = 5
+    print(f"Alphex model parameter count :{sum(p.numel() for p in mod.parameters() if p.requires_grad)}")
     for epoch in range(num_epochs):
-      train_loss = train(model, train_loader, optimizer, criterion)
-      val_loss = evaluate(model, val_loader, criterion)
+      train_loss = train(mod, train_loader, optimizer, criterion)
+      val_loss = evaluate(mod, val_loader, criterion)
       print(f"Epoch: {epoch+1}/{num_epochs}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}")
 
     # Testing
-    test_loss = evaluate(model, test_loader, criterion)
+    test_loss = evaluate(mod, test_loader, criterion)
     print(f"Test Loss: {test_loss:.4f}")
     input_ids = torch.zeros((batch_size, seq_length), dtype=torch.long)
-    o = model.generate(input_ids.to(device))
+    o = mod.generate(input_ids.to(device))
     print(decode(o))
-    torch.save(model ,'Alphex.pt')
+    torch.save(mod ,'Alphex.pt')
