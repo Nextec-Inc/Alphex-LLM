@@ -44,8 +44,7 @@ val_cutoff = int(num_chars * (train_frac + val_frac))
 
 train_dataset , valid_dataset ,  test_dataset = WikiText2()
 
-# Build vocabulary from the training set
-vocab = build_vocab_from_iterator(map(tokenizer, train_dataset))
+
 
 # Set up data loaders
 def data_process(text, seq_length):
@@ -149,4 +148,4 @@ if __name__ == '__main__':
     input_ids = torch.zeros((batch_size, seq_length), dtype=torch.long)
     o = model.generate(input_ids.to(device))
     print(decode(o))
-    torch.save(model ,'Alphex-BiDEN-Pretrained.pt')
+    torch.save(model ,'Alphex.pt')
