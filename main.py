@@ -165,7 +165,7 @@ if __name__ == '__main__':
     # Testing
     test_loss = evaluate(model, test_loader, criterion)
     print(f"Test Loss: {test_loss:.4f}")
-    input_ids = torch.zeros((batch_size, sequence_length), dtype=torch.long)
+    input_ids = torch.zeros((batch_size, seq_length), dtype=torch.long)
     o = model.generate(input_ids)
     print(decode(o))
     torch.save(model ,'Alphex-BiDEN-Pretrained.pt')
