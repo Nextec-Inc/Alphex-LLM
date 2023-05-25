@@ -80,9 +80,9 @@ def decode(tensor_sequences, vocab=vocab):
 
    tokens = tokenizer.convert_ids_to_tokens(token_ids)
 
-    text = tokenizer.convert_tokens_to_string(tokens)
+   text = tokenizer.convert_tokens_to_string(tokens)
 
-    return text
+   return text
 
 
 
