@@ -19,7 +19,7 @@ vocab_size = 50000  # Vocabulary size
 hidden_size = 256  # Hidden size for embeddings and model layers
 layers = 6  # Number of  encoder layers
 heads = 8  
-max_sequence_len = 128  # Maximum sequence length for input and output
+max_sequence_len = 1024 # Maximum sequence length for input and output
 
 # Tokenizer
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
