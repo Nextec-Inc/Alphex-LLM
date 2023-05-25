@@ -6,11 +6,8 @@ import os
 import model 
 from tqdm import tqdm
 from torchtext.datasets import WikiText2
-from torchtext.data.utils import get_tokenizer
-from torchtext.vocab import build_vocab_from_iterator
 from transformers import BertTokenizer
-import datasets
-import urllib
+import requests 
 # Set device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -24,26 +21,6 @@ max_sequence_len = 1024 # Maximum sequence length for input and output
 # Tokenizer
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
-url = "https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt"
-filename = "tinyshakespeare.txt"
-if not os.path.exists(filename):
-    urllib.request.urlretrieve(url, filename)
-
-# Read the dataset
-with open(filename, 'r') as f:
-    text = f.read()
-
-# Split the dataset into train, validation, and test sets
-train_frac = 0.8
-val_frac = 0.1
-test_frac = 0.1
-
-num_chars = len(text)
-train_cutoff = int(num_chars * train_frac)
-val_cutoff = int(num_chars * (train_frac + val_frac))
-
-train_dataset , valid_dataset ,  test_dataset = WikiText2()
-
 
 
 # Set up data loaders
@@ -56,6 +33,7 @@ def data_process(text, seq_length):
     return tensor
     
 
+
 def decode(tensor):
 
     tensor = tensor.tolist()
@@ -67,6 +45,21 @@ def decode(tensor):
 
 seq_length = 64  # Desired sequence length
 
+def download_file(url):
+    response = requests.get(url)
+    response.raise_for_status()
+    return response.text
+
+base_url = 'https://raw.githubusercontent.com/pytorch/examples/master/word_language_model/data/wikitext-2/'
+train_url = base_url + 'train.txt'
+valid_url = base_url + 'valid.txt'
+test_url = base_url + 'test.txt'
+
+# Download the dataset files
+train_dataset  = download_file(train_url)
+valid_dataset = download_file(valid_url)
+test_dataset = download_file(test_url)
+#Encode data 
 train_data = data_process(train_dataset , seq_length)
 val_data = data_process(valid_dataset , seq_length)
 test_data = data_process(test_dataset, seq_length)
@@ -78,15 +71,13 @@ train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
 val_loader = DataLoader(val_data, batch_size=batch_size)
 test_loader = DataLoader(test_data, batch_size=batch_size)
 
-# Alphex model n
-
 
 # Initialize the model
 model = model.Alphex(vocab_size, hidden_size, layers, heads, max_sequence_len).to(device)
 
 # Loss function and optimizer
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=0.001)
+optimizer = optim.Adam(model.parameters(), lr=3e-5)
 
 # Training loop
 def train(model, iterator, optimizer, criterion):
@@ -132,6 +123,7 @@ def evaluate(model, iterator, criterion):
             total_tokens += targets.size(0)
 
     return total_loss / total_tokens
+
 
 if __name__ == '__main__':
 # Training
