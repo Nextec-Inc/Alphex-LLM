@@ -142,7 +142,7 @@ def evaluate(mod, iterator, criterion):
 if __name__ == '__main__':
 # Training
     num_epochs = 5
-    print(f"Alphex model parameter count :{mod.parameters()}")
+    print(f"Alphex model parameter count :{sum(p.numel() for p in mod.parameters() if p.requires_grad)}")
     for epoch in range(num_epochs):
       train_loss = train(mod, train_loader, optimizer, criterion)
       val_loss = evaluate(mod, val_loader, criterion)
