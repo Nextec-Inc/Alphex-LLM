@@ -69,6 +69,21 @@ def data_process(raw_text_iter, seq_length):
     
 
     return data
+def decode(tensor_sequences, vocab=vocab):
+
+    # Flatten the tensor sequences
+
+    flat_data = tensor_sequences.flatten()
+
+    # Convert tensor values back into tokens
+
+    tokens = [vocab[idx.item()] for idx in flat_data]
+
+    # Join tokens to form text
+
+    decoded_text = ' '.join(tokens)
+
+    return decoded_text
 
 seq_length = 64  # Desired sequence length
 
@@ -150,4 +165,7 @@ if __name__ == '__main__':
     # Testing
     test_loss = evaluate(model, test_loader, criterion)
     print(f"Test Loss: {test_loss:.4f}")
+    input_ids = torch.zeros((batch_size, sequence_length), dtype=torch.long)
+    o = model.generate(input_ids)
+    print(decode(o))
     torch.save(model ,'Alphex-BiDEN-Pretrained.pt')
