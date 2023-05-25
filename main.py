@@ -77,7 +77,8 @@ model = model.Alphex(vocab_size, hidden_size, layers, heads, max_sequence_len).t
 
 # Loss function and optimizer
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=3e-5)
+weight_decay = 1e-5
+optimizer = optim.AdamW(model.parameters(), lr=3e-5, weight_decay=weight_decay,)
 
 # Training loop
 def train(model, iterator, optimizer, criterion):
@@ -93,6 +94,13 @@ def train(model, iterator, optimizer, criterion):
         logits = model(batch[:,:-1].contiguous())
         targets = batch[:, 1:].contiguous().view(-1)
         loss = criterion(logits.view(-1, vocab_size), targets)
+
+        # L2 regularization
+        l2_loss = 0.0
+        for param in model.parameters():
+            l2_loss += torch.norm(param, p=2)
+
+        loss += weight_decay * l2_loss
 
         # Backward pass
         loss.backward()
@@ -127,8 +135,8 @@ def evaluate(model, iterator, criterion):
 
 if __name__ == '__main__':
 # Training
-    num_epochs = 3
-
+    num_epochs = 5
+    print(f"Alphex model parameter count :{model.parameters()}")
     for epoch in range(num_epochs):
       train_loss = train(model, train_loader, optimizer, criterion)
       val_loss = evaluate(model, val_loader, criterion)
