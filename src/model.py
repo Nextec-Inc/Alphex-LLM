@@ -2,6 +2,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+class SwiGLU(nn.Module):
+    def forward(self, x):
+        x, gate = x.chunk(2, dim=-1)
+        return F.silu(gate) * x
 
 class Alphex(nn.Module):
     def __init__(self, vocab_size, hidden_size, num_layers, num_heads, max_sequence_len, dropout_rate=0.1):
@@ -32,13 +36,6 @@ class Alphex(nn.Module):
 
             return output_ids
 
-    def chat(self, prompt, max_length=20, temperature=1.0):
-        self.eval()
-        with torch.no_grad():
-            prompt_ids = torch.tensor(prompt, dtype=torch.long).unsqueeze(0)
-            generated_ids = self.generate(prompt_ids, max_length=max_length, temperature=temperature)
-            generated_text = ' '.join([tokenizer.decode(token_id.item()) for token_id in generated_ids[0]])
-            return generated_text
 
 class ContextualEncoder(nn.Module):
     def __init__(self, hidden_size, num_layers, num_heads, dropout_rate=0.1):
@@ -74,7 +71,7 @@ class TransformerBlock(nn.Module):
         self.multihead_attention = nn.MultiheadAttention(hidden_size, num_heads)
         self.feed_forward = nn.Sequential(
             nn.Linear(hidden_size, hidden_size * 4),
-            nn.ReLU(),
+            SwiGLU(),
             nn.Linear(hidden_size * 4, hidden_size)
         )
         self.layer_norm1 = nn.LayerNorm(hidden_size)
@@ -86,11 +83,7 @@ class TransformerBlock(nn.Module):
         inputs = self.layer_norm1(inputs)
         attended = self.multihead_attention(inputs, inputs, inputs)[0]
         inputs = residual + self.dropout(attended)
-
         residual = inputs
-        
-        
-
         inputs = self.layer_norm2(inputs)
         feed_forward_output = self.feed_forward(inputs)
         inputs = residual + self.dropout(feed_forward_output)
