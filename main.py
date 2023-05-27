@@ -18,7 +18,7 @@ layers = 6  # Number of  encoder layers
 heads = 8  
 max_sequence_len = 1024 # Maximum sequence length for input and output
 
-# Set up data loaders
+# Set up data loader
 seq_length = 64  # Desired sequence length
 
 def download_file(url):
@@ -62,8 +62,10 @@ if __name__ == '__main__':
     num_epochs = 5
     print(f"Alphex model parameter count :{sum(p.numel() for p in mod.parameters() if p.requires_grad)}")
     for epoch in range(num_epochs):
+
       train_loss = train(mod, train_loader, optimizer, criterion, weight_decay, vocab_size, device)
       val_loss = evaluate(mod, val_loader, criterion, vocab_size, device)
+
       print(f"Epoch: {epoch+1}/{num_epochs}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}")
 
     # Testing
