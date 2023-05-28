@@ -148,6 +148,7 @@ class RotaryPositionalEncoding(nn.Module):
 class TransformerBlock(nn.Module):
     def __init__(self, hidden_size, num_heads, dropout_rate=0.1, max_sequence_len=512):
         super(TransformerBlock, self).__init__()
+
         self.hidden_size = hidden_size
         self.num_heads = num_heads
         self.head_dim = hidden_size // num_heads
@@ -158,6 +159,7 @@ class TransformerBlock(nn.Module):
         self.dropout = nn.Dropout(dropout_rate)
         self.output_projection = nn.Linear(hidden_size, hidden_size)
         
+
         self.layer_norm1 = nn.LayerNorm(hidden_size)
         self.layer_norm2 = nn.LayerNorm(hidden_size)
         
@@ -166,6 +168,7 @@ class TransformerBlock(nn.Module):
     def forward(self, inputs):
         residual = inputs
         inputs = self.layer_norm1(inputs)
+
         
         # Add rotary positional encodings
         seq_len = inputs.size(1)
@@ -199,6 +202,8 @@ class TransformerBlock(nn.Module):
         
         # Residual connection and layer normalization
         inputs = residual + attended_values
+
+
         inputs = self.layer_norm2(inputs)
         
         return inputs
