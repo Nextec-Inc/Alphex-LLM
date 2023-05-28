@@ -4,19 +4,33 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 import os
 from src.model import Alphex
-import src.tokenizer as tokenizer
+from src.tokenizer import BPEncoder
 from src.train import train , evaluate
 from tqdm import tqdm
 import requests 
 # Set device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# Hyperparameters
+class Config:
+    def __init__(self, hidden_size, num_layers, num_heads, dropout_rate=0.1):
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
+        self.num_heads = num_heads
+        self.dropout_rate = dropout_rate
+
+# Define different configurations
+config_100M = Config(hidden_size=512, num_layers=6, num_heads=8, dropout_rate=0.1)
+config_350M = Config(hidden_size=1024, num_layers=12, num_heads=16, dropout_rate=0.1)
+config_2B = Config(hidden_size=2048, num_layers=24, num_heads=16, dropout_rate=0.1)
+config_10B = Config(hidden_size=4096, num_layers=32, num_heads=32, dropout_rate=0.1)
+
+config = config_2B
+#Hyperparameters
 vocab_size = 50000  # Vocabulary size
-hidden_size = 256  # Hidden size for embeddings and model layers
-layers = 6  # Number of  encoder layers
-heads = 8  
-max_sequence_len = 1024 # Maximum sequence length for input and output
+hidden_size = config.hidden_size # Hidden size for embeddings and model layers
+layers = config.num_layers   # Number of  encoder layers
+heads = config.num_heads
+max_sequence_len = 1024 # Maximum sequence length for input and outpuoutput
 
 # Set up data loader
 seq_length = 64  # Desired sequence length
@@ -35,12 +49,11 @@ test_url = base_url + 'test.txt'
 train_dataset  = download_file(train_url)
 valid_dataset = download_file(valid_url)
 test_dataset = download_file(test_url)
-tokenizer.BPEncoder.fit(train_dataset)
+BPEncoder.fit(train_dataset)
 #Encode data 
-train_data = tokenizer.BPEncoder.encode(train_dataset)
-val_data = tokenizer.BPEncoder.encode(valid_dataset)
-test_data = tokenizer.BPEncoder.encode(test_dataset)
-
+train_data = BPEncoder.encode(train_dataset)
+val_data = BPEncoder.encode(valid_dataset)
+test_data = BPEncoder.encode(test_dataset)
 batch_size = 32
 bptt_len = 32
 
