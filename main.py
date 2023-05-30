@@ -4,7 +4,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 import os
 from src.model import Alphex
-from src.tokenizer import BPEncoder
+from src.tokenizer import BpeTokenizer 
 from src.train import train , evaluate
 from tqdm import tqdm
 import requests 
@@ -49,11 +49,11 @@ test_url = base_url + 'test.txt'
 train_dataset  = download_file(train_url)
 valid_dataset = download_file(valid_url)
 test_dataset = download_file(test_url)
-BPEncoder.fit(train_dataset)
+BpeTokenizer.fit(train_dataset)
 #Encode data 
-train_data = BPEncoder.encode(train_dataset)
-val_data = BPEncoder.encode(valid_dataset)
-test_data = BPEncoder.encode(test_dataset)
+train_data = BpeTokenizer.encode(train_dataset)
+val_data = BpeTokenizer.encode(valid_dataset)
+test_data = BpeTokenizer.encode(test_dataset)
 batch_size = 32
 bptt_len = 32
 
@@ -86,5 +86,5 @@ if __name__ == '__main__':
     print(f"Test Loss: {test_loss:.4f}")
     input_ids = torch.zeros((batch_size, seq_length), dtype=torch.long)
     o = mod.generate(input_ids.to(device))
-    print(tokenizer.BPEncoder.decode(o))
+    print(BpeTokenizer.decode(o))
     torch.save(mod ,'Alphex.pt')
