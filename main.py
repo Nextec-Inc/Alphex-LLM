@@ -49,8 +49,7 @@ test_url = base_url + 'test.txt'
 train_dataset  = download_file(train_url)
 valid_dataset = download_file(valid_url)
 test_dataset = download_file(test_url)
-BpeTokenizer.fit(train_dataset)
-#Encode data 
+ 
 train_data = BpeTokenizer.encode(train_dataset)
 val_data = BpeTokenizer.encode(valid_dataset)
 test_data = BpeTokenizer.encode(test_dataset)
