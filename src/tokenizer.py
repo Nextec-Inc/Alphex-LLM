@@ -1,59 +1,70 @@
+from transformers import PreTrainedTokenizer
 import torch
-from collections import Counter
-
-class BPEncoder:
-    def __init__(self, num_merges):
-        self.num_merges = num_merges
-        self.vocab = {}
-
-    def fit(self, texts):
-        # Count character frequencies
-        char_counts = Counter("".join(texts))
+class BpeTokenizer:
+    def __init__(self):
+        self.tokenizer = PreTrainedTokenizer.from_pretrained('bert-base-uncased')
+        self.special_tokens_dict = {
+            '\n': '<|n|>',
+            '.': '<|dot|>',
+            ',': '<|comma|>',
+            '!': '<|exclamation|>',
+            '?': '<|question|>',
+            '#': '<|hash|>',
+            '@': '<|at|>',
+            '$': '<|dollar|>',
+            '%': '<|percent|>',
+            '&': '<|ampersand|>',
+            '*': '<|asterisk|>',
+            '-': '<|dash|>',
+            '+': '<|plus|>',
+            '=': '<|equal|>',
+            '/': '<|slash|>',
+            '\\': '<|backslash|>',
+            '|': '<|pipe|>',
+            ':': '<|colon|>',
+            ';': '<|semicolon|>',
+            '(': '<|left_parenthesis|>',
+            ')': '<|right_parenthesis|>',
+            '[': '<|left_bracket|>',
+            ']': '<|right_bracket|>',
+            '{': '<|left_curly_brace|>',
+            '}': '<|right_curly_brace|>',
+            '<': '<|less_than|>',
+            '>': '<|greater_than|>',
+            '~': '<|tilde|>',
+            '`': '<|backtick|>'
+        }
         
-        # Initialize the vocabulary with individual characters
-        self.vocab = {char: freq for char, freq in char_counts.items()}
-
-        for _ in range(self.num_merges):
-            pairs = self.get_pairs()
-            if not pairs:
-                break
-
-            # Find the most frequent pair
-            most_frequent_pair = max(pairs, key=lambda p: self.vocab.get(p, 0))
-            if most_frequent_pair not in self.vocab:
-                break
-
-            # Merge the most frequent pair
-            self.vocab["".join(most_frequent_pair)] = self.vocab.pop(most_frequent_pair)
-
-    def get_pairs(self):
-        pairs = set()
-        for word, freq in self.vocab.items():
-            symbols = word.split()
-            for i in range(len(symbols) - 1):
-                pairs.add((symbols[i], symbols[i + 1]))
-        return pairs
-
+        self.tokenizer.add_tokens(list(self.special_tokens_dict.values()))
+    
     def encode(self, text):
-        symbols = list(text)
-        encoded = []
-        while symbols:
-            for i in range(len(symbols), 0, -1):
-                subword = symbols[:i]
-                if subword in self.vocab:
-                    encoded.append(self.vocab[subword])
-                    symbols = symbols[i:]
-                    break
-            else:
-                # If no subword is found in the vocabulary, treat it as an unknown token
-                encoded.append(self.vocab["<unk>"])
-                symbols = symbols[1:]
-        return torch.tensor(encoded)
-
+        # Replace special characters with special tokens
+        for char, token in self.special_tokens_dict.items():
+            text = text.replace(char, ' ' + token + ' ')
+        
+        # Tokenize the text
+        tokens = self.tokenizer.tokenize(text)
+        
+        # Convert tokens to input IDs
+        input_ids = self.tokenizer.convert_tokens_to_ids(tokens)
+        
+        # Create a 2D tensor
+        tensor = torch.tensor([input_ids])
+        
+        return tensor
+    
     def decode(self, tensor):
-        decoded = ""
-        for token in tensor.tolist():
-            decoded += list(self.vocab.keys())[list(self.vocab.values()).index(token)]
-        return decoded
-
-
+        # Convert tensor to a list of input IDs
+        input_ids = tensor.tolist()[0]
+        
+        # Convert input IDs to tokens
+        tokens = self.tokenizer.convert_ids_to_tokens(input_ids)
+        
+        # Join tokens and remove special tokens
+        text = ' '.join(tokens)
+        
+        # Replace special tokens with special characters
+        for token, char in self.special_tokens_dict.items():
+            text = text.replace(token, char)
+        
+        return text
