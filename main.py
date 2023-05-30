@@ -62,8 +62,9 @@ test_loader = DataLoader(test_data, batch_size=batch_size)
 
 
 # Initialize the model
-mod = Alphex(vocab_size, hidden_size, layers, heads, max_sequence_len).to(device)
-
+model = Alphex(vocab_size, hidden_size, layers, heads, max_sequence_len).to(device)
+mod = torch.compile(model)
+mod.to(device)
 # Loss function and optimizer
 criterion = nn.CrossEntropyLoss()
 weight_decay = 1e-5
