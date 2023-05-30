@@ -35,9 +35,10 @@ class BpeTokenizer:
             '~': '<|tilde|>',
             '`': '<|backtick|>'
         }
+        self.tokenizer.add_special_tokens({'unk_token': '<unk>'})
         
         self.tokenizer.add_tokens(list(self.special_tokens_dict.values()))
-        self.tokenizer.add_special_tokens({'unk_token': '<unk>'})
+       
     
     def encode(self, text):
         # Replace special characters with special tokens
