@@ -4,13 +4,13 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 import os
 from src.model import Alphex
-from src.tokenizer import BpeTokenizer 
+from src.tokenizer import BpeTokenizer as Tokenizer 
 from src.train import train , evaluate
 from tqdm import tqdm
 import requests 
 # Set device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+BpeTokenizer = Tokenizer()
 class Config:
     def __init__(self, hidden_size, num_layers, num_heads, dropout_rate=0.1):
         self.hidden_size = hidden_size
