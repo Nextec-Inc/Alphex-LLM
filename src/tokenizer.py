@@ -4,6 +4,7 @@ class BpeTokenizer:
     def __init__(self):
         self.tokenizer = PreTrainedTokenizer.from_pretrained('bert-base-uncased')
         self.special_tokens_dict = {
+            '<unk>': '<unk>',
             '\n': '<|n|>',
             '.': '<|dot|>',
             ',': '<|comma|>',
@@ -49,7 +50,7 @@ class BpeTokenizer:
         input_ids = self.tokenizer.convert_tokens_to_ids(tokens)
         
         # Create a 2D tensor
-        tensor = torch.tensor([input_ids])
+        tensor = torch.tensor([input_ids]).unsqueeze(0)
         
         return tensor
     
